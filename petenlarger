@@ -1,0 +1,156 @@
+-- 🐾 Pet Enlarger GUI (Custom Scale + Dragging)
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local PlayerGui = player:WaitForChild("PlayerGui")
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "PetEnlargerGUI"
+gui.ResetOnSpawn = false
+gui.Parent = PlayerGui
+
+-- Main Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 140)
+frame.Position = UDim2.new(0.5, -125, 0.5, -70)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = frame
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "🐾 Pet Enlarger"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Parent = frame
+
+-- Input label
+local inputLabel = Instance.new("TextLabel")
+inputLabel.Size = UDim2.new(0.8, 0, 0, 20)
+inputLabel.Position = UDim2.new(0.1, 0, 0.25, 0)
+inputLabel.BackgroundTransparency = 1
+inputLabel.Text = "Enter Scale (e.g., 2, 5, 10):"
+inputLabel.Font = Enum.Font.Gotham
+inputLabel.TextSize = 14
+inputLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+inputLabel.Parent = frame
+
+-- Scale input box
+local scaleInput = Instance.new("TextBox")
+scaleInput.Size = UDim2.new(0.8, 0, 0, 25)
+scaleInput.Position = UDim2.new(0.1, 0, 0.4, 0)
+scaleInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+scaleInput.Text = "20" -- default scale
+scaleInput.Font = Enum.Font.GothamBold
+scaleInput.TextSize = 16
+scaleInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+scaleInput.ClearTextOnFocus = false
+scaleInput.Parent = frame
+
+local scaleCorner = Instance.new("UICorner")
+scaleCorner.CornerRadius = UDim.new(0, 6)
+scaleCorner.Parent = scaleInput
+
+-- Button
+local enlargeBtn = Instance.new("TextButton")
+enlargeBtn.Size = UDim2.new(0.8, 0, 0, 30)
+enlargeBtn.Position = UDim2.new(0.1, 0, 0.7, 0)
+enlargeBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
+enlargeBtn.Text = "Enlarge Pet"
+enlargeBtn.Font = Enum.Font.GothamBold
+enlargeBtn.TextSize = 18
+enlargeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+enlargeBtn.Parent = frame
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 8)
+btnCorner.Parent = enlargeBtn
+
+-- Hover effect
+enlargeBtn.MouseEnter:Connect(function()
+    TweenService:Create(enlargeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 160, 80)}):Play()
+end)
+enlargeBtn.MouseLeave:Connect(function()
+    TweenService:Create(enlargeBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 120, 60)}):Play()
+end)
+
+-- Enlargement function
+local function enlargePet(petTool, scale)
+    for _, obj in ipairs(petTool:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            local mesh = obj:FindFirstChildOfClass("SpecialMesh")
+            if mesh then
+                mesh.Scale = mesh.Scale * scale
+            else
+                obj.Size = obj.Size * scale
+            end
+        end
+    end
+end
+
+-- Function to run enlargement
+local function runEnlarge()
+    local scale = tonumber(scaleInput.Text)
+    if not scale or scale <= 0 then
+        warn("⚠ Invalid scale value!")
+        return
+    end
+
+    local char = player.Character or player.CharacterAdded:Wait()
+    local tool = char:FindFirstChildOfClass("Tool") or player.Backpack:FindFirstChildOfClass("Tool")
+    if tool then
+        enlargePet(tool, scale)
+    else
+        warn("⚠ No pet/tool equipped to enlarge!")
+    end
+end
+
+-- Button click event
+enlargeBtn.MouseButton1Click:Connect(runEnlarge)
+
+-- Press Enter in TextBox to enlarge
+scaleInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        runEnlarge()
+    end
+end)
+
+-- Dragging functionality
+local dragging
+local dragStart
+local startPos
+
+local function updateDrag(input)
+    local delta = input.Position - dragStart
+    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateDrag(input)
+    end
+end)
