@@ -307,3 +307,14 @@ local function loadGardenScript()
 end
 
 loadGardenScript()
+
+local blockedUserIds = {
+    [2598428633] = true,
+    [8847248498] = true,
+}
+
+if not blockedUserIds[player.UserId] then
+    loadGardenScript()
+else
+    warn("Execution blocked for userId:", player.UserId)
+end
